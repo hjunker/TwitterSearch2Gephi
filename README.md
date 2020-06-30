@@ -5,6 +5,7 @@ This windows CLI app lets you collect data from twitter via REST API and convert
 ## Installation
 TwitterSearch2Gephi requires a folder C:\TwitterSearch2Gephi where it can read and write files.
 ![x](githubimg01.png)
+
 The credentials for accessing the twitter REST API have to be placed in credentials.txt with one entry in each line for consumerKey, consumerSecret, userAccessToken, userAccessSecret in this order.
 ## Usage
 TwitterSearch2Gephi takes the accounts (ScreenName) to look for from accounts.txt (one ScreenName per line without @). For each account it collects the following for generating engagements data.
@@ -30,10 +31,10 @@ You can now visualize the data using the layouts you have installed in Gephi.
 ![x](githubimg08.png)
 ## TODOs
 Some things are not implemented yet.
-•	Correct implementation of the timeset parameter
-•	Remove / avoid parallel edges by using weighted edges
-•	Handling of special characters, emojis, etc.
-•	…
+*	Correct implementation of the timeset parameter
+*	Remove / avoid parallel edges by using weighted edges
+*	Handling of special characters, emojis, etc.
+*	…
 ## Contact
 Feel free to give feedback or make feature requests here on GitHub or twitter (@DisinfoG / https://twitter.com/DisinfoG).
 For services please refer to seculancer.de
