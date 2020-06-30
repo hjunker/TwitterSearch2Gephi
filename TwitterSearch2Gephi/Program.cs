@@ -115,7 +115,7 @@ namespace TwitterSearch2Gephi
         {
             Console.WriteLine("TwitterSearch2Gephi - @DisinfoG");
             Console.WriteLine("https://twitter.com/DisinfoG \n");
-            Console.WriteLine("");
+            Console.WriteLine("https://github.com/hjunker/TwitterSearch2Gephi");
             Console.WriteLine("");
 
             String outdir = @"C:\TwitterSearch2Gephi";
