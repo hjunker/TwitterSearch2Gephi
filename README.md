@@ -1,5 +1,6 @@
 # TwitterSearch2Gephi
 This windows CLI app lets you collect data from twitter via REST API and convert it into a CSV data set that can be used with Gephi.
+[@DisinfoG](https://twitter.com/DisinfoG)
 
 ## Installation
 TwitterSearch2Gephi requires a folder C:\TwitterSearch2Gephi where it can read and write files.
