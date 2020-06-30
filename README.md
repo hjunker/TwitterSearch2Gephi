@@ -13,6 +13,7 @@ TwitterSearch2Gephi takes the accounts (ScreenName) to look for from accounts.tx
 *	Friends (default max. 250)
 *	Favorites (default max. 40)
 *	Retweets
+
 Please note that ‘engagements’ refers to accounts engaging with another account or their tweets. The data is collected from twitter’s standard REST API, _not_ the engagements API.
 Data collection can be performed recursive. Invoke TwitterSearch2Gephi with a integer as first parameter to chose a maxdepth other than the default which is set to 1 for one iteration.
 The tool is invoked by double-clicking TwitterSearch2Gephi.exe or starting it from a cmd shell. The output is written to edges.csv which can be imported to Gephi.
