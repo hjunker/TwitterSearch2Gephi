@@ -14,19 +14,19 @@ TwitterSearch2Gephi takes the accounts (ScreenName) to look for from accounts.tx
 Please note that ‘engagements’ refers to accounts engaging with another account or their tweets. The data is collected from twitter’s standard REST API, _not_ the engagements API.
 Data collection can be performed recursive. Invoke TwitterSearch2Gephi with a integer as first parameter to chose a maxdepth other than the default which is set to 1 for one iteration.
 The tool is invoked by double-clicking TwitterSearch2Gephi.exe or starting it from a cmd shell.
-![x](https://github.com/hjunker/TwitterSearch2Gephi/githubimg02.png)
+![x](githubimg02.png)
 The output is written to edges.csv which can be imported to Gephi.
-![x](https://github.com/hjunker/TwitterSearch2Gephi/githubimg03.png)
+![x](githubimg03.png)
 Gephi should automatically recognize the data in edges.csv as an edges table.
-![x](https://github.com/hjunker/TwitterSearch2Gephi/githubimg04.png)
+![x](githubimg04.png)
 The default import setting can be used.
-![x](https://github.com/hjunker/TwitterSearch2Gephi/githubimg05.png)
+![x](githubimg05.png)
 In early versions of TwitterSearch2Gephi parallel edges can / will occur. Weighted edges might be included in later versions.
-![x](https://github.com/hjunker/TwitterSearch2Gephi/githubimg06.png)
+![x](githubimg06.png)
 If everything works right you should see the data in the data lab view.
-![x](https://github.com/hjunker/TwitterSearch2Gephi/githubimg07.png)
+![x](githubimg07.png)
 You can now visualize the data using the layouts you have installed in Gephi.
-![x](https://github.com/hjunker/TwitterSearch2Gephi/githubimg08.png)
+![x](githubimg08.png)
 ## TODOs
 Some things are not implemented yet.
 •	Correct implementation of the timeset parameter
