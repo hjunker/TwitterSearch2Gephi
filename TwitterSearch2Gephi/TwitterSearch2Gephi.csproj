@@ -4,8 +4,12 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
+	<PropertyGroup>
+		<LangVersion>preview</LangVersion>
+	</PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Google.Apis.YouTube.v3" Version="1.47.0.2005" />
     <PackageReference Include="TweetinviAPI" Version="4.0.3" />
   </ItemGroup>
 
