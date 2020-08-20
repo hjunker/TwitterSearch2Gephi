@@ -46,3 +46,9 @@ Some things are not implemented yet.
 Feel free to give feedback or make feature requests here on GitHub or twitter (@DisinfoG / https://twitter.com/DisinfoG).
 
 For services please refer to seculancer.de
+
+## Contribute to TwitterSearch2Gephi
+Please feel free to give a spare dime/dollar/euro/... or two... It will be used to further enhance my open source projects.
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=WLC2SHZL6SPNY)
+
+You can also support my projects by donating hardware and other stuff to keep operative backend and development systems running. Please take a look at (my list on, [amazon](https://www.amazon.de/hz/wishlist/ls/2FD1Z75K43I7M?ref_=wl_share))
