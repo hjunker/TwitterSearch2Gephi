@@ -4,7 +4,7 @@ TwitterSearch2Gephi is a windows CLI app that lets you collect data from twitter
 Written by [@DisinfoG](https://twitter.com/DisinfoG)
 
 ## Installation
-Download the [ZIP containing the binary and libs](https://github.com/hjunker/TwitterSearch2Gephi/blob/master/TwitterSearch2Gephi.zip) or use the source.
+Download the [ZIP containing the binary and libs](https://github.com/hjunker/TwitterSearch2Gephi/blob/master/TwitterSearch2Gephi.zip - might be an older version) or use the current source.
 
 TwitterSearch2Gephi requires the folder C:\TwitterSearch2Gephi where it can read and write files.
 ![x](githubimg01.png)
