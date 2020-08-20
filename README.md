@@ -19,7 +19,7 @@ TwitterSearch2Gephi takes the accounts (ScreenName) to look for from accounts.tx
 
 Please note that ‘engagements’ refers to accounts engaging with another account or their tweets. The data is collected from twitter’s standard REST API, _not_ the engagements API.
 
-Data collection can be performed recursive. Therefore TwitterSearch2Gephi will ask you for an integer to chose a maxdepth other than the default which is set to 1 for one iteration.
+Data collection can be performed recursive. Therefore TwitterSearch2Gephi will ask you for an integer to chose a maxdepth other than the default which is set to 1 for one iteration. It will also ask you whether to write the findings to file or send it live to gephi's web interface.
 
 The tool is invoked by double-clicking TwitterSearch2Gephi.exe or starting it from a cmd shell. The output is written to edges.csv which can be imported to Gephi.
 ![x](githubimg02.png)
@@ -38,7 +38,7 @@ You can now visualize the data using the layouts you have installed in Gephi.
 ## TODOs
 Some things are not implemented yet.
 *	Correct implementation of the timeset parameter
-*	Remove / avoid parallel edges by using weighted edges
+*	Remove / avoid parallel edges by using weighted edges (when doing live feed to gephi's web interface)
 *	Handling of special characters, emojis, etc.
 *	…
 ## Contact
