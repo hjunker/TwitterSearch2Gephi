@@ -10,6 +10,9 @@ using System.Runtime.CompilerServices;
 using System.Diagnostics.Tracing;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Text;
 
 namespace TwitterSearch2Gephi
 {
@@ -26,32 +29,80 @@ namespace TwitterSearch2Gephi
             counter++;
         }
 
-        public static void handleUser1(String handle, String targetfile, int depth, int maxdepth)
+        public static async void sendToGephi(DateTime dt, String nameA, String nameB, String kind, int weight)
+        {
+            HttpClient client = new HttpClient();
+            HttpRequestMessage request = new HttpRequestMessage(System.Net.Http.HttpMethod.Post, "http://localhost:8080/a1?operation=updateGraph");
+            //"http://localhost:8080/a1?operation=updateGraph" -d "{\"ae\":{\"AB\":{\"source\":\"A\",\"target\":\"B\",\"directed\":false}}}
+            //String jsonpayload = "{\"ae\":{\"AB\":{\"source\":\"A\",\"target\":\"B\",\"directed\":false}}}";
+            String jsonpayload = "{\"an\":{\"" + nameA + "\":{\"label\":\"" + nameA + "\"}}}";
+            var stringcontent = new StringContent(jsonpayload, Encoding.UTF8, "application/json");
+            request.Content = stringcontent;
+            var response = await client
+                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead)
+                .ConfigureAwait(false);
+
+            request = new HttpRequestMessage(System.Net.Http.HttpMethod.Post, "http://localhost:8080/a1?operation=updateGraph");
+            jsonpayload = "{\"an\":{\"" + nameB + "\":{\"label\":\"" + nameB + "\"}}}";
+            stringcontent = new StringContent(jsonpayload, Encoding.UTF8, "application/json");
+            request.Content = stringcontent;
+            response = await client
+                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead)
+                .ConfigureAwait(false);
+
+            // TODO: update existing edges (weighted!)
+            request = new HttpRequestMessage(System.Net.Http.HttpMethod.Post, "http://localhost:8080/a1?operation=updateGraph");
+            jsonpayload = "{\"ae\":{\"" + nameB + "-" + nameA + "\":{\"source\":\"" + nameB + "\",\"target\":\"" + nameA + "\",\"directed\":false}}}";
+            stringcontent = new StringContent(jsonpayload, Encoding.UTF8, "application/json");
+            request.Content = stringcontent;
+            response = await client
+                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead)
+                .ConfigureAwait(false);
+        }
+
+        public static async void handleUser1(String handle, String targetfile, int depth, int maxdepth, int output)
         {
             //int maxdepth = 1;
             try
             {
-                IUser user = User.GetUserFromScreenName(handle);
+                IUser user = null;
+
+                user = User.GetUserFromScreenName(handle);
                 if (user == null) Console.WriteLine("ERROR GETTING USER");
                 Console.WriteLine(user.ScreenName + " / " + user.Name + " / " + user.IdStr);
 
                 try
                 {
                     System.Collections.Generic.IEnumerable<IUser> enumfollowers = user.GetFollowers(250);
+                    Console.WriteLine("followers found: " + enumfollowers.Count());
                     if (enumfollowers != null)
                     {
                         foreach (IUser tmpuser in enumfollowers)
                         {
                             DateTime timeset = tmpuser.CreatedAt;
-                            writeLine(timeset, user.ScreenName, tmpuser.ScreenName, "FollowedBy", targetfile, 2);
 
-                            if (depth < maxdepth) handleUser1(tmpuser.ScreenName, targetfile, depth + 1, maxdepth);
+                            if (output == 1)
+                            {
+                                writeLine(timeset, user.ScreenName, tmpuser.ScreenName, "FollowedBy", targetfile, 2);
+                            }
+                            else
+                            {
+                                sendToGephi(timeset, user.ScreenName, tmpuser.ScreenName, "FollowedBy", 2);
+                            }
+
+                            if (depth < maxdepth) handleUser1(tmpuser.ScreenName, targetfile, depth + 1, maxdepth, output);
                         }
                     }
+                    else
+                    {
+                        Console.WriteLine("no followers found");
+                    }
                 }
-                catch (Exception)
-                { }
-
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+                
                 try
                 {
                     System.Collections.Generic.IEnumerable<IUser> enumfriends = user.GetFriends(250);
@@ -60,15 +111,23 @@ namespace TwitterSearch2Gephi
                         foreach (IUser tmpuser in enumfriends)
                         {
                             DateTime timeset = tmpuser.CreatedAt;
-                            writeLine(timeset, tmpuser.ScreenName, user.ScreenName, "FriendOf", targetfile, 5);
 
-                            if (depth < maxdepth) handleUser1(tmpuser.ScreenName, targetfile, depth + 1, maxdepth);
+                            if (output == 1)
+                            {
+                                writeLine(timeset, tmpuser.ScreenName, user.ScreenName, "FriendOf", targetfile, 5);
+                            }
+                            else
+                            {
+                                sendToGephi(timeset, user.ScreenName, tmpuser.ScreenName, "FollowedBy", 5);
+                            }
+
+                            if (depth < maxdepth) handleUser1(tmpuser.ScreenName, targetfile, depth + 1, maxdepth, output);
                         }
                     }
                 }
                 catch (Exception)
                 { }
-
+                
                 try
                 {
                     System.Collections.Generic.IEnumerable<ITweet> favtweets = user.GetFavorites(40);
@@ -77,7 +136,15 @@ namespace TwitterSearch2Gephi
                         foreach (ITweet favoredtweet in favtweets)
                         {
                             DateTime timeset = favoredtweet.CreatedAt;
-                            writeLine(timeset, favoredtweet.CreatedBy.ScreenName, user.ScreenName, "FavoredBy", targetfile, 1);
+                            
+                            if (output == 1)
+                            {
+                                writeLine(timeset, favoredtweet.CreatedBy.ScreenName, user.ScreenName, "FavoredBy", targetfile, 1);
+                            }
+                            else
+                            {
+                                sendToGephi(timeset, favoredtweet.CreatedBy.ScreenName, user.ScreenName, "FavoredBy", 5);
+                            }
 
                             //if (depth < maxdepth) handleUser1(favoredtweet.CreatedBy.ScreenName, targetfile, depth + 1);
                         }
@@ -93,7 +160,15 @@ namespace TwitterSearch2Gephi
                         foreach (ITweet retweet in user.Retweets)
                         {
                             DateTime timeset = retweet.CreatedAt;
-                            writeLine(timeset, retweet.CreatedBy.ScreenName, user.ScreenName, "RetweetedBy", targetfile, 2);
+                            
+                            if (output == 1)
+                            {
+                                writeLine(timeset, retweet.CreatedBy.ScreenName, user.ScreenName, "RetweetedBy", targetfile, 2);
+                            }
+                            else
+                            {
+                                sendToGephi(timeset, retweet.CreatedBy.ScreenName, user.ScreenName, "RetweetedBy", 5);
+                            }
 
                             //if (depth < maxdepth) handleUser1(favoredtweet.CreatedBy.ScreenName, targetfile, depth + 1);
                         }
@@ -103,7 +178,8 @@ namespace TwitterSearch2Gephi
                 { }
 
                 //counter++;
-                System.Threading.Thread.Sleep(1000 * 2);
+                System.Threading.Thread.Sleep(1000 * 4);
+                
 
                 //user.TweetsRetweetedByFollowers;
             }
@@ -135,6 +211,7 @@ namespace TwitterSearch2Gephi
             if (choice.KeyChar == 'c')
             {
                 int maxdepth = 1;
+                int output = 1;
 
                 try
                 {
@@ -145,6 +222,17 @@ namespace TwitterSearch2Gephi
                 catch (Exception)
                 {
                     Console.WriteLine("no maxdepth given as first parameter. setting maxdepth = 1\n");
+                }
+
+                try
+                {
+                    Console.Write("output to file (1) or gephi web interface (2) (default=1): ");
+                    output = int.Parse(Console.ReadLine());
+                    Console.WriteLine("");
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("error reading your input.\n");
                 }
 
                 // Create Directory
@@ -179,14 +267,16 @@ namespace TwitterSearch2Gephi
 
 
                 // MANUAL MAPPING OF ACCOUNTS, e.g. RTDeutsch and russiatoday, also for cross social-media mapping, ...
+                /*
                 DateTime timeset = DateTime.Now;
                 writeLine(timeset, "HolgerJunker", "DisinfoG", "RetweetedBy", outfile, 50);
+                */
 
                 Console.WriteLine("Starting to collect engagements data from accounts...");
 
                 foreach (String handle in accounts)
                 {
-                    handleUser1(handle, outfile, 0, maxdepth);
+                    handleUser1(handle, outfile, 0, maxdepth, output);
                 }
             }
 
@@ -199,6 +289,8 @@ namespace TwitterSearch2Gephi
                 File.WriteAllText(outdir + @"\edges-weighted.csv", "Source,Target,Type,Kind,Id,Label,timeset,Weight\n");
 
                 Dictionary<string, int> edges = new Dictionary<string, int>();
+                Dictionary<string, int> spreaders = new Dictionary<string, int>();
+
                 String[] lines = File.ReadAllLines(outfile);
                 
                 for (int i=1; i<lines.Length; i++)
@@ -244,7 +336,27 @@ namespace TwitterSearch2Gephi
                     {
                         edges.Add(key, weight);
                     }
+
+                    if (spreaders.ContainsKey(values[1]))
+                    {
+                        int oldval;
+                        spreaders.TryGetValue(values[1], out oldval);
+                        spreaders.Remove(values[1]);
+                        spreaders.Add(values[1], oldval + weight);
+                    }
+                    else
+                    {
+                        spreaders.Add(values[1], weight);
+                    }
                 }
+
+                Console.WriteLine("SPREADERS\n---------");
+                foreach (KeyValuePair<string, int> tmp in spreaders)
+                {
+                    //File.AppendAllText(outdir + @"\edges-weighted.csv", tmp.Key + "," + tmp.Value + "\n");
+                    Console.WriteLine(tmp.Key + ", " + tmp.Value);
+                }
+                Console.WriteLine("\n\n");
 
                 // write Dictionary edges to edges-weighted.csv
                 Console.WriteLine("\n\n Writing edges-weighted.csv");
