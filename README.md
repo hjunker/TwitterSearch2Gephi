@@ -37,6 +37,7 @@ You can now visualize the data using the layouts you have installed in Gephi.
 ![x](githubimg08.png)
 ## TODOs
 Some things are not implemented yet.
+* fix some issues on rate limits (currently TwitterSearch2Gephi does not always get that it is above rate limits and therefore does not process any engagements aka is skipping accounts)
 *	Correct implementation of the timeset parameter
 *	Remove / avoid parallel edges by using weighted edges (when doing live feed to gephi's web interface)
 *	Handling of special characters, emojis, etc.
