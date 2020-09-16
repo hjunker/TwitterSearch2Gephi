@@ -36,7 +36,7 @@ Gephi should automatically recognize the data in edges.csv as an edges table.
 ![x](githubimg04.png)
 The default import setting can be used.
 ![x](githubimg05.png)
-In early versions of TwitterSearch2Gephi parallel edges can / will occur. Weighted edges might be included in later versions.
+TwitterSearch2Gephi creates edges.csv which typically contains parallel edges. Use the option 'w' to convert edges.csv to weighted-edges.csv.
 ![x](githubimg06.png)
 If everything works right you should see the data in the data lab view.
 ![x](githubimg07.png)
