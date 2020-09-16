@@ -6,10 +6,15 @@
   </PropertyGroup>
 	<PropertyGroup>
 		<LangVersion>preview</LangVersion>
+		<Authors>@DisinfoG / Holger Junker /</Authors>
+		<Company>seculancer.de</Company>
+		<PackageProjectUrl>https://github.com/hjunker/TwitterSearch2Gephi</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/hjunker/TwitterSearch2Gephi</RepositoryUrl>
 	</PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Google.Apis.YouTube.v3" Version="1.47.0.2005" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.24" />
     <PackageReference Include="TweetinviAPI" Version="4.0.3" />
   </ItemGroup>
 
