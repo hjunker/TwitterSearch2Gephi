@@ -1,5 +1,9 @@
 # TwitterSearch2Gephi
-TwitterSearch2Gephi is a windows CLI app that lets you collect data from twitter via REST API and convert it into a CSV data set that can be used with Gephi.
+TwitterSearch2Gephi is a windows CLI app that lets you collect data from social media and convert it into a CSV data set that can be used with Gephi. Currently it supports
+* Twitter
+* Reddit
+* WWW domains / URLs
+More social media platforms and more features for the platforms already implemented will be added later.
 
 Written by [@DisinfoG](https://twitter.com/DisinfoG)
 
@@ -10,6 +14,9 @@ TwitterSearch2Gephi requires the folder C:\TwitterSearch2Gephi where it can read
 ![x](githubimg01.png)
 
 The credentials for accessing the twitter REST API have to be placed in credentials.txt with one entry in each line for consumerKey, consumerSecret, userAccessToken, userAccessSecret in this order.
+
+The credentials for accessing the Reddit API have to be placed in redditcredentials.txt. The file needs to contain the 3 credential parameters for your reddit account / app one per line in the order appId, refreshToken, accessToken. These tokens have to be generated with a third party component such as Reddit.NET. If you get an 401 error you need to renew your credentials - these tokens become obsolete within a narrow time window of non-usage.
+
 ## Usage
 TwitterSearch2Gephi takes the accounts (ScreenName) to look for from accounts.txt (one ScreenName per line without @). For each account it collects the following for generating engagements data.
 *	Followers (default max. 250)
@@ -39,7 +46,6 @@ You can now visualize the data using the layouts you have installed in Gephi.
 Some things are not implemented yet.
 * fix some issues on rate limits (currently TwitterSearch2Gephi does not always get that it is above rate limits and therefore does not process any engagements aka is skipping accounts)
 *	Correct implementation of the timeset parameter
-*	Remove / avoid parallel edges by using weighted edges (when doing live feed to gephi's web interface)
 *	Handling of special characters, emojis, etc.
 *	…
 ## Contact
