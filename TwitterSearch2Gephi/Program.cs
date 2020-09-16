@@ -15,6 +15,8 @@ using System.Net.Http;
 using System.Text;
 using HtmlAgilityPack;
 using System.Net;
+//using Reddit;
+//using Reddit.Controllers;
 
 namespace TwitterSearch2Gephi
 {
@@ -336,6 +338,8 @@ namespace TwitterSearch2Gephi
             String domainsfile = outdir + @"\domains.txt";
             String searchtermsfile = outdir + @"\searchterms.txt";
             String credentialsfile = outdir + @"\credentials.txt";
+            String subredditsfile = outdir + @"\subreddits.txt";
+            String redditcredentialsfile = outdir + @"\redditcredentials.txt";
             String userchoice = "";
             ConsoleKeyInfo choice;
 
@@ -351,11 +355,11 @@ namespace TwitterSearch2Gephi
             Console.WriteLine("\nwww\n---");
             Console.WriteLine("d - crawl web domains / URLs from domains.txt and create edges.csv");
             Console.WriteLine("\nreddit\n------");
-            Console.WriteLine("r - crawl reddit accounts from redditaccounts.txt and create edges.csv");
+            Console.WriteLine("r - crawl reddit subreddits from subreddits.txt / accounts from redditaccounts.txt and create edges.csv");
             Console.WriteLine("\ngeneral\n-------");
             Console.WriteLine("w - create weighted edges file (from edges.csv to edges-weighted.csv)");
             Console.WriteLine("c - clique-analysis from edges-weighted.csv (early stage PoC)");
-            Console.Write("\nWhat should I do for you?");
+            Console.Write("\nWhat should I do for you? ");
             choice = Console.ReadKey();
             Console.WriteLine("\n");
             userchoice += choice.KeyChar;
@@ -586,6 +590,62 @@ namespace TwitterSearch2Gephi
 
             // --------------------------------------------------------------
 
+            if (choice.KeyChar == 'r')
+            {
+                String[] credentials = null;
+                try
+                {
+                    credentials = File.ReadAllLines(redditcredentialsfile);
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Error reading " + redditcredentialsfile + ". Please remember the file needs to contain the 3 credential parameters for your reddit account / app one per line in the order appId, refreshToken, accessToken. These tokens have to be generated with a third party component such as Reddit.NET. If you get an 401 error you need to renew your credentials.");
+                    Console.ReadKey();
+                }
+                Console.WriteLine(credentials[0] + "\n" + credentials[1] + "\n" + credentials[2] + "\n");
+                Reddit.RedditClient reddit = new Reddit.RedditClient(appId: credentials[0], refreshToken: credentials[1], accessToken: credentials[2]);
+                DateTime timesetdummy = DateTime.Now;
+                
+                File.WriteAllText(outfile, "RSource,RTarget,Type,Kind,Id,Label,timeset,Weight\n");
+
+                String[] subnames = File.ReadAllLines(subredditsfile);
+
+                foreach (String subname in subnames)
+                {
+                    List<Reddit.Controllers.Structures.Moderator> moderators = reddit.Subreddit(subname).Moderators;
+
+                    Reddit.Controllers.Subreddit sub = reddit.Subreddit(subname).About();
+                    
+                    foreach (Reddit.Controllers.Structures.Moderator tmp in moderators)
+                    {
+                        writeLine('w', timesetdummy, "u_" + tmp.Name, "r_" + sub.Name, "ModeratorOf", outfile, 2);
+                    }
+
+                    // Get new posts from this subreddit.
+                    List<Reddit.Controllers.Post> newPosts = sub.Posts.New;
+
+                    //Console.WriteLine("Retrieved " + newPosts.Count.ToString() + " new posts.\n\n");
+                    foreach (var post in newPosts)
+                    {
+                        if (true)//post.Created > DateTime.Now.AddDays(-7))
+                        {
+                            //Console.WriteLine(post.Created.ToLongDateString() + " - " + post.Permalink + " - " + post.Subreddit + " / " + post.Title + " / " + post.Author + " / " + post.Fullname + " / " + post.Listing.SelfText);
+                            writeLine('w', timesetdummy, "u_" + post.Author, "r_" + sub.Name, "PostedIn", outfile, 2);
+
+                            foreach (Reddit.Controllers.Comment comment in post.Comments.GetComments())
+                            {
+                                // TODOs: recursive crawling of comments, spam and other properties, created, awards, score, 
+                                //Console.WriteLine("comment by " + comment.Author + " / " + comment.Fullname + ": " + comment.Body + "[" + comment.UpVotes + "/" + comment.DownVotes + "]" + "(" + comment.Permalink + " / " + comment.Id + ")");
+                                writeLine('w', timesetdummy, "u_" + comment.Author, "u_" + post.Author, "CommentedOn", outfile, 2);
+                            }
+                            //Console.WriteLine("\n\n-----------------------------------------------------------------\n\n");
+                        }
+                    }
+                }
+            }
+
+            // --------------------------------------------------------------
+
             if (choice.KeyChar == 'w')
             {
                 Console.WriteLine("converting edges.csv to edges-weighted.csv");
@@ -600,8 +660,9 @@ namespace TwitterSearch2Gephi
                 Char dataset = '-';
                 if (lines[0].Equals("Source,Target,Type,Kind,Id,Label,timeset,Weight")) dataset = 't';
                 if (lines[0].Equals("domain,title,link,linktext")) dataset = 'w';
+                if (lines[0].Equals("RSource,RTarget,Type,Kind,Id,Label,timeset,Weight")) dataset = 'w';
 
-                    for (int i=1; i<lines.Length; i++)
+                for (int i=1; i<lines.Length; i++)
                 {
                     // values: Source,Target,Type,Kind,Id,Label,timeset,Weight
                     // Kind: RetweetedBy / FollowedBy / FriendOf / 
