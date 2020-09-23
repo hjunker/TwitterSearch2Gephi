@@ -17,12 +17,14 @@ using HtmlAgilityPack;
 using System.Net;
 //using Reddit;
 //using Reddit.Controllers;
+using User = Tweetinvi.User;
 
 namespace TwitterSearch2Gephi
 {
     class Program
     {
         public static int counter = 0;
+        public static Dictionary<string, int> processedAccounts = new Dictionary<string, int>();
 
         public static void writeLine(Char dataset, DateTime dt, String nameA, String nameB, String kind, String targetfile, int weight)
         {
@@ -72,7 +74,7 @@ namespace TwitterSearch2Gephi
                 .ConfigureAwait(false);
         }
 
-        public static void handleUser1(String handle, String targetfile, int depth, int maxdepth, int output)
+        public static void handleUser1(String term, String handle, String targetfile, int depth, int maxdepth, int output)
         {
             //int maxdepth = 1;
             try
@@ -82,6 +84,19 @@ namespace TwitterSearch2Gephi
                 user = User.GetUserFromScreenName(handle);
                 if (user == null) Console.WriteLine("ERROR GETTING USER");
                 Console.WriteLine(user.ScreenName + " / " + user.Name + " / " + user.IdStr);
+
+                if (term != null)
+                {
+                    DateTime timeset = DateTime.Now;
+                    if (output == 1)
+                    {
+                        writeLine('t', timeset, user.ScreenName, term, "LinkTo", targetfile, 10);
+                    }
+                    else
+                    {
+                        sendToGephi(timeset, user.ScreenName, term, "LinkTo", 10);
+                    }
+                }
                 
                 try
                 {
@@ -102,7 +117,7 @@ namespace TwitterSearch2Gephi
                                 sendToGephi(timeset, user.ScreenName, tmpuser.ScreenName, "FollowedBy", 2);
                             }
 
-                            if (depth < maxdepth) handleUser1(tmpuser.ScreenName, targetfile, depth + 1, maxdepth, output);
+                            if (depth < maxdepth) handleUser1(null, tmpuser.ScreenName, targetfile, depth + 1, maxdepth, output);
                         }
                     }
                     else
@@ -134,7 +149,7 @@ namespace TwitterSearch2Gephi
                                 sendToGephi(timeset, user.ScreenName, tmpuser.ScreenName, "FollowedBy", 5);
                             }
 
-                            if (depth < maxdepth) handleUser1(tmpuser.ScreenName, targetfile, depth + 1, maxdepth, output);
+                            if (depth < maxdepth) handleUser1(null, tmpuser.ScreenName, targetfile, depth + 1, maxdepth, output);
                         }
                     }
                 }
@@ -202,17 +217,17 @@ namespace TwitterSearch2Gephi
             }
         }
 
-        public static void searchTerm(String term, String targetfile, int depth, int maxdepth, int output)
+        public static void searchTerm(Dictionary<string, int> alreadyProcessed, String term, String targetfile, int depth, int maxdepth, int output)
         {
             //int maxdepth = 1;
             try
             {
-                var searchParameter = new SearchTweetsParameters("TwitterSearch2Gephi")
+                var searchParameter = new SearchTweetsParameters(term)
                 {
                     //GeoCode = new GeoCode(-122.398720, 37.781157, 1, DistanceMeasure.Miles),
                     //Lang = LanguageFilter.English,
                     //SearchType = SearchResultType.Popular,
-                    //MaximumNumberOfResults = 100,
+                    MaximumNumberOfResults = 100,
                     //Until = new DateTime(2015, 06, 02),
                     //SinceId = 399616835892781056,
                     //MaxId = 405001488843284480,
@@ -220,13 +235,24 @@ namespace TwitterSearch2Gephi
                 };
                 var tweets = Tweetinvi.Search.SearchTweets(searchParameter).ToList();
                 var tweetList = new List<ITweet>(tweets);
-
+                Console.WriteLine(tweetList.Count + " tweets found");
 
                 //IUser user = null;
 
                 foreach (ITweet tweet in tweetList)
                 {
-                    handleUser1(tweet.CreatedBy.ScreenName, targetfile, depth, maxdepth, output);
+                    if (!alreadyProcessed.ContainsKey(tweet.CreatedBy.ScreenName))
+                    {
+                        handleUser1(term, tweet.CreatedBy.ScreenName, targetfile, depth, maxdepth, output);
+                        alreadyProcessed.Add(tweet.CreatedBy.ScreenName, 1);
+                    }
+                    else
+                    {
+                        int tmpval;
+                        alreadyProcessed.TryGetValue(tweet.CreatedBy.ScreenName, out tmpval);
+                        alreadyProcessed.Remove(tweet.CreatedBy.ScreenName);
+                        alreadyProcessed.Add(tweet.CreatedBy.ScreenName, tmpval + 1);
+                    }
                 }
 
             }
@@ -348,7 +374,6 @@ namespace TwitterSearch2Gephi
             Console.WriteLine("https://github.com/hjunker/TwitterSearch2Gephi");
             Console.WriteLine("using folder " + outdir);
             Console.WriteLine("");
-            Console.Write("What should I do for you?");
             Console.WriteLine("\ntwitter\n-------");
             Console.WriteLine("a - crawl twitter accounts from accounts.txt and create edges.csv");
             Console.WriteLine("s - collect twitter data from search terms in searchterms.txt and create edges.csv");
@@ -364,11 +389,88 @@ namespace TwitterSearch2Gephi
             Console.WriteLine("\n");
             userchoice += choice.KeyChar;
 
+            if (choice.KeyChar == 'u')
+            {
+                String[] nodes = { "", "MitBenutzername", "soistdatt", "p_manske", "PeterBorbe", "ThePraetorian21", "jan_mainka", "guenter0853", "politischerBeo1", "MeisnerWerner", "Itschi1", "HellerNorden", "mumaemar", "Kra07Man", "McGaybear", "RalfSchmitz2402", "Stephen12Miller", "WunderEmil", "SharleenM5", "Procyon25", "LudwigLarcher", "Inhaber1", "schamolf666", "schweizok2", "SapmiThe", "Jane_Banane_", "PPiwi55", "Mutbrger3", "MichaelRigol", "JensJahr", "Higgswielange", "sanvenganz_a", "orwell1984_a", "GNaktiv", "Panthersprung", "Zigeunerbaron3", "RuthBroucq", "LuckyLandShop", "Walthander", "Xena93795210", "OfficeRolando", "MaTiaWa1", "sifu_Qkung_fu", "OlivierKahn3", "Qnessi17", "pimmelbob", "sgasteyger", "lookintothesky3", "pjensen111", "tioneada", "mythologous", "schmidja2017", "MarcAnt0463", "oldipeterpan", "HPunkt_SPunkt", "wollea71", "SchwarzeHexe5", "Maxman23", "Schnapp98712747", "Stephan2301", "Petra507838451", "St_MichaelAngel", "nertha7", "Mirola11695965", "rheindelta20", "Lipitelektroph1", "MHHofmeister", "martinm90350202", "SnaH3210", "Q_Tweets", "MS87366367", "Starwalker999", "michacsendc", "Vaaltor", "Peter73832399", "LedbetterRalf", "PratoriusDr", "Northpoleshift", "strfry", "Muelle2s", "VolksArchitekt", "nimrod63", "marcusneuhaus", "RasantiVeloce", "Nebulous81", "TheTrueMPK", "Simon_Groh", "ZettJens", "von_kries", "TS_Quint", "Liraja5", "Imageberatungen", "Tschonka", "tlehr15", "suerprisli", "UlrHenn", "Jaybird_XXX", "uwe_1955", "JosephinaLopz1", "politisch_und_k" };
+                String[,] adjmatrix = new string[nodes.Length, nodes.Length];
+                for (int i = 0; i<nodes.Length; i++)
+                {
+                    adjmatrix[0, i] = nodes[i];
+                    adjmatrix[i, 0] = nodes[i];
+                }
+
+                for (int i = 0; i<nodes.Length; i++)
+                {
+                    for (int j = 0; j < nodes.Length; j++)
+                    {
+                        if ((i!=0) & (j!=0) & (i!=j))
+                            adjmatrix[i, j] = ""+0;
+                    }
+                }
+
+                String[] edges = File.ReadAllLines(outfile);
+
+                foreach (String edge in edges)
+                {
+                    String[] edgevalues = edge.Split(',');
+                    String nodeA = edgevalues[0].Substring(1);
+                    String nodeB = edgevalues[1].Substring(1);
+                    //Console.WriteLine(nodeA + " / " + nodeB);
+
+                    for (int i = 0; i < nodes.Length; i++)
+                    {
+                        String username = nodes[i];
+                        
+                        for (int j = 0; j < nodes.Length; j++)
+                        {
+                            if ((i != 0) & (j != 0) & (i != j))
+                            {
+                                String username2 = nodes[j];
+                                
+                                if (((nodeA.Equals(username)) & (nodeB.Equals(username2))))
+                                //if ((edge.Contains(username)) & (edge.Contains(username2)))
+                                {
+                                    adjmatrix[i, j] = "" + 1;
+                                    Console.WriteLine(username + "," + username2 + "," + edgevalues[3]);
+                                }
+                                else
+                                {
+                                    //adjmatrix[i, j] = "" + 0;
+                                }
+                                /*
+                                if (((nodeB.Equals(username)) & (nodeA.Equals(username2))))
+                                {
+                                    adjmatrix[j, i] = "" + 1;
+                                    Console.WriteLine(username2 + "," + username + "," + edgevalues[3]);
+                                }
+                                else
+                                {
+                                    //adjmatrix[j, i] = "" + 0;
+                                }
+                                */
+                            }
+                            if (i == j) adjmatrix[i, j] = "";
+                        }
+                    }
+                }
+
+                for (int i = 0; i < nodes.Length; i++)
+                {
+                    for (int j = 0; j < nodes.Length; j++)
+                    {
+                        Console.Write(adjmatrix[i, j] + ",");
+                    }
+                    Console.Write("\n");
+                    }
+                }
+
+            // ------------------------------------------------
+
             if (choice.KeyChar == 'c')
             {
                 String nodeA, nodeB;
                 // patient zero account(s) P0
-                String p0 = "Zeitgeschehen_";
+                String p0 = "guenter0853";
 
 
                 // get all nodes / accounts from edges-weighted.csv
@@ -416,7 +518,9 @@ namespace TwitterSearch2Gephi
                 // for each node check matching engagers in comparison to P0'
                 int counter = 0;
                 String[] edgevalues;
-                
+
+
+                // TODO: better performance when exchanging the first two foreach loops?!
                 foreach (String node in nodes)
                 {
                     counter = 0;
@@ -512,7 +616,13 @@ namespace TwitterSearch2Gephi
 
                 foreach (String term in searchterms)
                 {
-                    searchTerm(term, outfile, 0, maxdepth, output);
+                    Console.WriteLine("processing search term " + term);
+                    searchTerm(processedAccounts, term, outfile, 0, maxdepth, output);
+                }
+
+                foreach (var stat in processedAccounts)
+                {
+                    Console.WriteLine(stat.Key + "," + stat.Value);
                 }
             }
 
@@ -584,7 +694,7 @@ namespace TwitterSearch2Gephi
 
                 foreach (String handle in accounts)
                 {
-                    handleUser1(handle, outfile, 0, maxdepth, output);
+                    handleUser1(null, handle, outfile, 0, maxdepth, output);
                 }
             }
 
@@ -602,7 +712,6 @@ namespace TwitterSearch2Gephi
                     Console.WriteLine("Error reading " + redditcredentialsfile + ". Please remember the file needs to contain the 3 credential parameters for your reddit account / app one per line in the order appId, refreshToken, accessToken. These tokens have to be generated with a third party component such as Reddit.NET. If you get an 401 error you need to renew your credentials.");
                     Console.ReadKey();
                 }
-                Console.WriteLine(credentials[0] + "\n" + credentials[1] + "\n" + credentials[2] + "\n");
                 Reddit.RedditClient reddit = new Reddit.RedditClient(appId: credentials[0], refreshToken: credentials[1], accessToken: credentials[2]);
                 DateTime timesetdummy = DateTime.Now;
                 
@@ -610,37 +719,48 @@ namespace TwitterSearch2Gephi
 
                 String[] subnames = File.ReadAllLines(subredditsfile);
 
+                Console.WriteLine("processing subreddits");
+
                 foreach (String subname in subnames)
                 {
-                    List<Reddit.Controllers.Structures.Moderator> moderators = reddit.Subreddit(subname).Moderators;
-
-                    Reddit.Controllers.Subreddit sub = reddit.Subreddit(subname).About();
-                    
-                    foreach (Reddit.Controllers.Structures.Moderator tmp in moderators)
+                    Console.WriteLine(subname);
+                    try
                     {
-                        writeLine('w', timesetdummy, "u_" + tmp.Name, "r_" + sub.Name, "ModeratorOf", outfile, 2);
-                    }
+                        List<Reddit.Controllers.Structures.Moderator> moderators = reddit.Subreddit(subname).Moderators;
 
-                    // Get new posts from this subreddit.
-                    List<Reddit.Controllers.Post> newPosts = sub.Posts.New;
+                        Reddit.Controllers.Subreddit sub = reddit.Subreddit(subname).About();
 
-                    //Console.WriteLine("Retrieved " + newPosts.Count.ToString() + " new posts.\n\n");
-                    foreach (var post in newPosts)
-                    {
-                        if (true)//post.Created > DateTime.Now.AddDays(-7))
+                        foreach (Reddit.Controllers.Structures.Moderator tmp in moderators)
                         {
-                            //Console.WriteLine(post.Created.ToLongDateString() + " - " + post.Permalink + " - " + post.Subreddit + " / " + post.Title + " / " + post.Author + " / " + post.Fullname + " / " + post.Listing.SelfText);
-                            writeLine('w', timesetdummy, "u_" + post.Author, "r_" + sub.Name, "PostedIn", outfile, 2);
+                            writeLine('w', timesetdummy, "u_" + tmp.Name, "r_" + sub.Name, "ModeratorOf", outfile, 2);
+                        }
 
-                            foreach (Reddit.Controllers.Comment comment in post.Comments.GetComments())
+                        // Get new posts from this subreddit.
+                        List<Reddit.Controllers.Post> newPosts = sub.Posts.New;
+
+                        //Console.WriteLine("Retrieved " + newPosts.Count.ToString() + " new posts.\n\n");
+                        foreach (var post in newPosts)
+                        {
+                            if (true)//post.Created > DateTime.Now.AddDays(-7))
                             {
-                                // TODOs: recursive crawling of comments, spam and other properties, created, awards, score, 
-                                //Console.WriteLine("comment by " + comment.Author + " / " + comment.Fullname + ": " + comment.Body + "[" + comment.UpVotes + "/" + comment.DownVotes + "]" + "(" + comment.Permalink + " / " + comment.Id + ")");
-                                writeLine('w', timesetdummy, "u_" + comment.Author, "u_" + post.Author, "CommentedOn", outfile, 2);
+                                //Console.WriteLine(post.Created.ToLongDateString() + " - " + post.Permalink + " - " + post.Subreddit + " / " + post.Title + " / " + post.Author + " / " + post.Fullname + " / " + post.Listing.SelfText);
+                                writeLine('w', timesetdummy, "u_" + post.Author, "r_" + sub.Name, "PostedIn", outfile, 2);
+
+                                foreach (Reddit.Controllers.Comment comment in post.Comments.GetComments())
+                                {
+                                    // TODOs: recursive crawling of comments, spam and other properties, created, awards, score, 
+                                    //Console.WriteLine("comment by " + comment.Author + " / " + comment.Fullname + ": " + comment.Body + "[" + comment.UpVotes + "/" + comment.DownVotes + "]" + "(" + comment.Permalink + " / " + comment.Id + ")");
+                                    writeLine('w', timesetdummy, "u_" + comment.Author, "u_" + post.Author, "CommentedOn", outfile, 2);
+                                }
+                                //Console.WriteLine("\n\n-----------------------------------------------------------------\n\n");
                             }
-                            //Console.WriteLine("\n\n-----------------------------------------------------------------\n\n");
                         }
                     }
+                    catch (Exception)
+                    {
+                        Console.WriteLine(" ! error !");
+                    }
+                    //System.Threading.Thread.Sleep(1000 * 60);
                 }
             }
 
