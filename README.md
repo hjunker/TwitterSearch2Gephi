@@ -12,7 +12,8 @@ Written by [@DisinfoG](https://twitter.com/DisinfoG)
 ## Installation
 Currently there is no binary package available for TwitterSearch2Gephi on GitHub. As Obi Wan would say: May the source be with you. Currently TwitterSearch2Gephi does not intend to be a product (and it probably won't in the near future) - it is more like a PoC or something to get you started. Depending on what you want to do with it, you have to code yourself or contact me. Basic knowledge in coding (not necessarily .NET) and should be sufficient.
 
-TwitterSearch2Gephi requires the folder C:\TwitterSearch2Gephi as its working directory where it can read and write files.
+TwitterSearch2Gephi requires the folder C:\TwitterSearch2Gephi as its working directory where it can read and write files. In case you want to use TwitterSearch2Gephi with Mono, you have to adjust this (hard coded) directory. This should be enough to get you up and running with Mono since TwitterSearch2Gephi is a .NET-Core application (not a full .NET application).
+
 ![x](img/githubimg01.png)
 
 The credentials for accessing the twitter REST API have to be placed in credentials.txt with one entry in each line for consumerKey, consumerSecret, userAccessToken, userAccessSecret in this order.
