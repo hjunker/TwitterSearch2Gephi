@@ -749,7 +749,7 @@ namespace TwitterSearch2Gephi
                     Console.ReadKey();
                 }
 
-                String key = @"&key=" + File.ReadAllText(@"C:\FakeFlowFinder\youtube.txt");
+                String key = @"&key=" + File.ReadAllText(outdir + @"\youtube.txt");
                 JObject jsonres;
                 String strres;
                 JArray items_video, items_comment, items_replies;
