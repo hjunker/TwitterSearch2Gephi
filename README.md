@@ -59,8 +59,10 @@ documentation coming soon
 ### WWW (option d)
 documentation coming soon
 
-### general (options w and c)
+### general (options w, u and c)
 documentation coming soon
+
+Option 'u' converts edges.csv to edges-ucinet.csv in order to make it usable in UCINET. edges-ucinet.csv has to be converted to a xslx file (e.g. with LibreOffice). The xslx file can then be imported with UCINET's DL editor (type edges23). You can then save the imported data as ##d and ##h files. Work on these files with UCINET.
 
 ## TODOs
 Some things are not implemented yet.
