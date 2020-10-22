@@ -18,9 +18,34 @@ using System.Net;
 //using Reddit;
 //using Reddit.Controllers;
 using User = Tweetinvi.User;
+using Newtonsoft.Json.Linq;
 
 namespace TwitterSearch2Gephi
 {
+    class MyWebClient : WebClient
+    {
+        Uri _responseUri;
+
+        public Uri ResponseUri
+        {
+            get { return _responseUri; }
+        }
+
+        protected override WebResponse GetWebResponse(WebRequest request)
+        {
+            try
+            {
+                WebResponse response = base.GetWebResponse(request);
+                _responseUri = response.ResponseUri;
+                return response;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+    }
+
     class Program
     {
         public static int counter = 0;
@@ -130,10 +155,10 @@ namespace TwitterSearch2Gephi
                     Console.WriteLine(ex.Message);
                 }
                 
-                
+                /*
                 try
                 {
-                    System.Collections.Generic.IEnumerable<IUser> enumfriends = user.GetFriends(1000);
+                    System.Collections.Generic.IEnumerable<IUser> enumfriends = user.GetFriends(5000);
                     if (enumfriends != null)
                     {
                         foreach (IUser tmpuser in enumfriends)
@@ -155,7 +180,7 @@ namespace TwitterSearch2Gephi
                 }
                 catch (Exception)
                 { }
-                
+                */
                 try
                 {
                     System.Collections.Generic.IEnumerable<ITweet> favtweets = user.GetFavorites(200);
@@ -381,6 +406,8 @@ namespace TwitterSearch2Gephi
             Console.WriteLine("d - crawl web domains / URLs from domains.txt and create edges.csv");
             Console.WriteLine("\nreddit\n------");
             Console.WriteLine("r - crawl reddit subreddits from subreddits.txt / accounts from redditaccounts.txt and create edges.csv");
+            Console.WriteLine("\nyoutube\n------");
+            Console.WriteLine("y - collect youtube data from search terms in searchtermsn.txt and create edges.csv");
             Console.WriteLine("\ngeneral\n-------");
             Console.WriteLine("w - create weighted edges file (from edges.csv to edges-weighted.csv)");
             Console.WriteLine("c - clique-analysis from edges-weighted.csv (early stage PoC)");
@@ -696,6 +723,149 @@ namespace TwitterSearch2Gephi
                 {
                     handleUser1(null, handle, outfile, 0, maxdepth, output);
                 }
+            }
+
+            // --------------------------------------------------------------
+
+            if (choice.KeyChar == 'y')
+            {
+                int maxdepth = 1;
+                int output = 1;
+                MyWebClient mwc = new MyWebClient();
+
+                Console.WriteLine("youtube search");
+
+                // Create Directory
+                System.IO.Directory.CreateDirectory(outdir);
+
+                String[] searchterms = null;
+                try
+                {
+                    searchterms = File.ReadAllLines(searchtermsfile);
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Error reading " + searchtermsfile);
+                    Console.ReadKey();
+                }
+
+                String key = @"&key=" + File.ReadAllText(@"C:\FakeFlowFinder\youtube.txt");
+                JObject jsonres;
+                String strres;
+                JArray items_video, items_comment, items_replies;
+                String publishedAfter = "&publishedAfter=2020-10-01T00%3A00%3A00Z";
+                String urlSearchList;
+
+                File.WriteAllText(outfile, "Source,Target,Type,Kind,Id,Label,timeset,Weight\n");
+
+                // TODO: handle paginated results for keyword search (similar to the way it is already implemented for comments)
+                foreach (String querywords in searchterms)
+                {
+                    String query = "&q=" + querywords;
+                    urlSearchList = "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=100" + query + publishedAfter + key;
+
+                    strres = mwc.DownloadString(urlSearchList);
+                    //Console.WriteLine(strres);
+
+                    jsonres = JObject.Parse(strres);
+                    items_video = (JArray)jsonres["items"];
+
+                    Console.WriteLine("videos for search query: " + querywords);
+                    foreach (JObject tmp in items_video)
+                    {
+                        Boolean firstpage = true;
+                        String nextPageToken = null;
+
+                        // nur Videos --> tmp["id"]["kind"] == "youtube#video"
+                        Console.WriteLine(tmp["snippet"]["title"] + " / " + tmp["snippet"]["channelId"] + " / " + tmp["id"]["videoId"]);
+                        //Console.WriteLine(tmp["replies"]);
+
+                        // searchTerm(processedAccounts, term, outfile, 0, maxdepth, output);
+                        DateTime timeset = DateTime.Now;
+                        String title = "[VIDEO]" + ((String)tmp["snippet"]["title"]).Replace(',','_');
+                        String channelTitle = ((String)tmp["snippet"]["channelTitle"]).Replace(',', '_');
+                        writeLine('w', timeset, channelTitle + " / " + tmp["snippet"]["channelId"], title + " / " + tmp["id"]["videoId"], "publishedVideo", outfile, 10);
+
+                        // get relations from comments on current video
+                        while ((firstpage == true) | (nextPageToken != null))
+                        {
+                            //Console.WriteLine("next iteration...");
+                            String maxres = @"&maxResults=100";
+                            String videoid = "" + tmp["id"]["videoId"];
+                            String video = @"&videoId=" + videoid;
+                            String urlcommentThreadList = @"https://www.googleapis.com/youtube/v3/commentThreads?part=snippet%2Creplies" + maxres + video + key;
+                            if (nextPageToken != null)
+                            {
+                                urlcommentThreadList += "&pageToken=" + nextPageToken;
+                            }
+                            //Console.WriteLine("ThreadList URL: " + urlcommentThreadList);
+
+                            // TODO: handle various cases that might occur, such as disabled comments
+                            try
+                            {
+                                mwc = new MyWebClient();
+                                strres = mwc.DownloadString(urlcommentThreadList);
+                                //Console.WriteLine(strres);
+
+                                jsonres = JObject.Parse(strres);
+                                nextPageToken = (String)jsonres["nextPageToken"];
+                                items_comment = (JArray)jsonres["items"];
+
+                                Console.WriteLine("comments to video " + videoid);
+                                foreach (JObject item in items_comment)
+                                {
+                                    String authorDisplayName = ((String)item["snippet"]["topLevelComment"]["snippet"]["authorDisplayName"]).Replace(',', '_');
+                                    String textOriginal = (String)item["snippet"]["topLevelComment"]["snippet"]["textOriginal"];
+                                    String authorChannelUrl = (String)item["snippet"]["topLevelComment"]["snippet"]["authorChannelUrl"];
+                                    String authorChannelId = (String)item["snippet"]["topLevelComment"]["snippet"]["authorChannelId"]["value"];
+                                    Console.WriteLine(authorDisplayName + " / " + textOriginal + " / " + authorChannelUrl + " / " + authorChannelId);
+                                    writeLine('w', timeset, authorDisplayName + " / " + authorChannelId, title + " / " + videoid, "commentedVideo", outfile, 5);
+
+                                    // TODO: handle replies to comments
+                                    //Console.WriteLine(item["replies"]["comments"]);
+                                    if (item["replies"] != null)
+                                    {
+                                        //Console.WriteLine("REPLIES FOUND!!!");
+                                        //Console.WriteLine(item["replies"]["comments"]);
+                                        try
+                                        {
+                                            //JObject jsonreplies = JObject.Parse((String)item["replies"]["comments"]);
+                                            items_replies = (JArray)item["replies"]["comments"];
+                                            //Console.WriteLine("items_replies count: " + items_replies.Count);
+
+                                            foreach (JObject item_reply in items_replies)
+                                            {
+                                                String replAuthorDisplayName = ((String)item_reply["snippet"]["authorDisplayName"]).Replace(',', '_');
+                                                String replTextOriginal = (String)item_reply["snippet"]["textOriginal"];
+                                                String replAuthorChannelUrl = (String)item_reply["snippet"]["authorChannelUrl"];
+                                                String replAuthorChannelId = (String)item_reply["snippet"]["authorChannelId"]["value"];
+                                                Console.WriteLine(replAuthorDisplayName + " / " + replTextOriginal + " / " + replAuthorChannelUrl + " / " + replAuthorChannelId);
+                                                writeLine('w', timeset, replAuthorDisplayName + " / " + replAuthorChannelId, authorDisplayName + " / " + authorChannelId, "repliedComment", outfile, 5);
+                                            }
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            Console.WriteLine("ERROR during handling REPLIES:\n" + e.Message + "\n" + e.StackTrace);
+                                        }
+                                    }
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                //Console.WriteLine("ERROR during handling ThreadList:\n" + urlcommentThreadList + "\n" + e.Message + "\n" + e.StackTrace);
+                            }
+
+                            if (firstpage == true)
+                            {
+                                firstpage = false;
+                            }
+                            
+                            //Console.WriteLine("firstpage: " + firstpage);
+                            //Console.WriteLine("nextPageToken: " + nextPageToken);
+                        }
+                    }
+                }
+                
             }
 
             // --------------------------------------------------------------
