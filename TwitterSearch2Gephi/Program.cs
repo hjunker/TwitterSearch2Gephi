@@ -68,6 +68,13 @@ namespace TwitterSearch2Gephi
             counter++;
         }
 
+        public static void writeLineUci(String nameA, String nameB, String kind, String targetfile)
+        {
+            String res = nameA + "," + nameB + "," + kind;
+            File.AppendAllText(targetfile, res + "\n");
+            counter++;
+        }
+
         public static async void sendToGephi(DateTime dt, String nameA, String nameB, String kind, int weight)
         {
             HttpClient client = new HttpClient();
@@ -99,6 +106,59 @@ namespace TwitterSearch2Gephi
                 .ConfigureAwait(false);
         }
 
+        public static String stripString(String instr)
+        {
+            String res = "";
+            Encoding ascii = Encoding.ASCII;
+            Byte[] encodedBytes = ascii.GetBytes(instr);
+            String decodedString = ascii.GetString(encodedBytes);
+            res = decodedString.Replace('\\', ' ').Replace(',', ';').Replace('\n', '/').Replace('"', ' ').Replace('\'', ' ');
+            return res;
+        }
+
+        public static void getTwitterNode(IUser user)
+        {
+            /*
+            String res = "@" + user.ScreenName + ",";
+            res += user.ScreenName + ",";
+            res += user.FriendsCount + ",";
+            res += user.FollowersCount + ",";
+            */
+
+            // TODO: string values in "..." after doing some good casting/encoding/...
+            
+            //Id,Label,timeset,twitter_type,lat,lng,place_country,place_type,place_fullname,place_name,
+            //created_at,lang,possibly_sensitive,quoted_status_permalink,description,email,profile_image,
+            //friends_count,followers_count,real_name,location,emoji_alias,emoji_html_decimal,emoji_utf8
+            //String res = user.IdStr + ",";
+            String res = "@" + user.ScreenName + ",";
+            res += user.ScreenName + ",";
+            res += user.CreatedAt.ToString("s") + "Z" + ",";
+            res += "User" + ",";
+            res += ",";
+            res += ",";
+            res += ",";
+            res += ",";
+            res += ",";
+            res += ",";
+            res += user.CreatedAt.ToString() + ",";
+            res += ",";
+            res += ",";
+            res += ",";
+            res += "\"" + stripString(user.Description) + "\",";
+            res += ",";
+            res += user.ProfileImageUrl + ",";
+            res += user.FriendsCount + ",";
+            res += user.FollowersCount + ",";
+            res += "\"" + stripString(user.Name) + "\",";
+            res += "\"" + stripString(user.Location) + "\",";
+            res += ",";
+            res += ",";
+            res += "";
+            
+            File.AppendAllText(@"C:\TwitterSearch2Gephi\nodes.csv", res + "\n");
+        }
+
         public static void handleUser1(String term, String handle, String targetfile, int depth, int maxdepth, int output)
         {
             //int maxdepth = 1;
@@ -109,6 +169,7 @@ namespace TwitterSearch2Gephi
                 user = User.GetUserFromScreenName(handle);
                 if (user == null) Console.WriteLine("ERROR GETTING USER");
                 Console.WriteLine(user.ScreenName + " / " + user.Name + " / " + user.IdStr);
+                getTwitterNode(user);
 
                 if (term != null)
                 {
@@ -125,7 +186,7 @@ namespace TwitterSearch2Gephi
                 
                 try
                 {
-                    System.Collections.Generic.IEnumerable<IUser> enumfollowers = user.GetFollowers(2500);
+                    System.Collections.Generic.IEnumerable<IUser> enumfollowers = user.GetFollowers(250);
                     Console.WriteLine("followers found: " + enumfollowers.Count());
                     if (enumfollowers != null)
                     {
@@ -141,6 +202,7 @@ namespace TwitterSearch2Gephi
                             {
                                 sendToGephi(timeset, user.ScreenName, tmpuser.ScreenName, "FollowedBy", 2);
                             }
+                            getTwitterNode(tmpuser);
 
                             if (depth < maxdepth) handleUser1(null, tmpuser.ScreenName, targetfile, depth + 1, maxdepth, output);
                         }
@@ -158,7 +220,7 @@ namespace TwitterSearch2Gephi
                 /*
                 try
                 {
-                    System.Collections.Generic.IEnumerable<IUser> enumfriends = user.GetFriends(5000);
+                    System.Collections.Generic.IEnumerable<IUser> enumfriends = user.GetFriends(50);
                     if (enumfriends != null)
                     {
                         foreach (IUser tmpuser in enumfriends)
@@ -173,6 +235,7 @@ namespace TwitterSearch2Gephi
                             {
                                 sendToGephi(timeset, user.ScreenName, tmpuser.ScreenName, "FollowedBy", 5);
                             }
+                            getTwitterNode(tmpuser);
 
                             if (depth < maxdepth) handleUser1(null, tmpuser.ScreenName, targetfile, depth + 1, maxdepth, output);
                         }
@@ -198,6 +261,7 @@ namespace TwitterSearch2Gephi
                             {
                                 sendToGephi(timeset, favoredtweet.CreatedBy.ScreenName, user.ScreenName, "FavoredBy", 5);
                             }
+                            getTwitterNode(favoredtweet.CreatedBy);
 
                             //if (depth < maxdepth) handleUser1(favoredtweet.CreatedBy.ScreenName, targetfile, depth + 1);
                         }
@@ -222,6 +286,7 @@ namespace TwitterSearch2Gephi
                             {
                                 sendToGephi(timeset, retweet.CreatedBy.ScreenName, user.ScreenName, "RetweetedBy", 5);
                             }
+                            getTwitterNode(retweet.CreatedBy);
 
                             //if (depth < maxdepth) handleUser1(favoredtweet.CreatedBy.ScreenName, targetfile, depth + 1);
                         }
@@ -379,11 +444,66 @@ namespace TwitterSearch2Gephi
             }
         }
 
+        public static String getYoutubeUser(String id)
+        {
+            String key = @"&key=" + File.ReadAllText(@"C:\TwitterSearch2Gephi" + @"\youtube.txt");
+            // Id, Label, Interval [, ...]
+            // COLLECT DATA FROM YOUTUBE CHANNEL
+            // https://developers.google.com/youtube/v3/docs/channels
+            // https://www.googleapis.com/youtube/v3/channels?part=snippet%2CcontentDetails%2Cstatistics%2CauditDetails%2CcontentOwnerDetails%2Clocalizations%2Cstatus
+            //String username = "GoogleDevelopers";
+            //String usernamestr = "&forUsername=" + username;
+            //String urlChannels = "https://www.googleapis.com/youtube/v3/channels?part=snippet%2CcontentDetails%2Cstatistics%2CcontentOwnerDetails" + usernamestr + key;
+            String idstr = "&id=" + id;
+            String urlChannels = "https://www.googleapis.com/youtube/v3/channels?part=snippet%2CcontentDetails%2Cstatistics%2CcontentOwnerDetails" + idstr + key;
+
+            MyWebClient mwc = new MyWebClient();
+            String strres = mwc.DownloadString(urlChannels);
+            Console.WriteLine(strres);
+
+            JObject jsonresu = JObject.Parse(strres);
+            JArray itemsu = (JArray)jsonresu["items"];
+            String res = "";
+
+            foreach (var item in itemsu)
+            {
+                res += item["id"];
+                res += ",\"" + stripString((String)item["snippet"]["title"]) + "\"";
+                res += "," + item["snippet"]["publishedAt"]; 
+                res += ",\"" + stripString((String)item["snippet"]["description"]) + "\"";
+                res += "," + item["snippet"]["customUrl"];
+                res += "," + item["snippet"]["defaultLanguage"];
+                res += "," + item["snippet"]["country"];
+                res += "," + item["statistics"]["viewCount"];
+                res += "," + item["statistics"]["subscriberCount"];
+                res += "," + item["statistics"]["hiddenSubscriberCount"];
+                res += "," + item["statistics"]["videoCount"];
+                return res;
+
+                Console.WriteLine("id: " + item["id"]);
+                Console.WriteLine("snippet.title: " + item["snippet"]["title"]);
+                Console.WriteLine("snippet.publishedAt: " + item["snippet"]["publishedAt"]); 
+                Console.WriteLine("snippet.description: " + item["snippet"]["description"]);
+                Console.WriteLine("snippet.customUrl: " + item["snippet"]["customUrl"]);
+                Console.WriteLine("snippet.defaultLanguage: " + item["snippet"]["defaultLanguage"]);
+                Console.WriteLine("snippet.country: " + item["snippet"]["country"]);
+                Console.WriteLine("statistics.viewCount: " + item["statistics"]["viewCount"]);
+                Console.WriteLine("statistics.subscriberCount: " + item["statistics"]["subscriberCount"]);
+                Console.WriteLine("statistics.hiddenSubscriberCount: " + item["statistics"]["hiddenSubscriberCount"]);
+                Console.WriteLine("statistics.videoCount: " + item["statistics"]["videoCount"]);
+                //Console.WriteLine("auditDetails.overallGoodStanding: " + item["auditDetails"]["overallGoodStanding"]);
+                //Console.WriteLine("contentOwnerDetails.contentOwner: " + item["contentOwnerDetails"]["contentOwner"]);
+
+            }
+            return "";
+        }
+
         static void Main(string[] args)
         //static async Task Main(string[] args)
         {
             String outdir = @"C:\TwitterSearch2Gephi";
             String outfile = outdir + @"\edges.csv";
+            String nodesoutfile = outdir + @"\nodes.csv";
             String ewfile = outdir + @"\edges-weighted.csv";
             String accountsfile = outdir + @"\accounts.txt";
             String domainsfile = outdir + @"\domains.txt";
@@ -400,8 +520,8 @@ namespace TwitterSearch2Gephi
             Console.WriteLine("using folder " + outdir);
             Console.WriteLine("");
             Console.WriteLine("\ntwitter\n-------");
-            Console.WriteLine("a - crawl twitter accounts from accounts.txt and create edges.csv");
-            Console.WriteLine("s - collect twitter data from search terms in searchterms.txt and create edges.csv");
+            Console.WriteLine("a - crawl twitter accounts from accounts.txt and create edges.csv and nodes.csv");
+            Console.WriteLine("s - collect twitter data from search terms in searchterms.txt and create edges.csv and nodes.csv");
             Console.WriteLine("\nwww\n---");
             Console.WriteLine("d - crawl web domains / URLs from domains.txt and create edges.csv");
             Console.WriteLine("\nreddit\n------");
@@ -410,13 +530,39 @@ namespace TwitterSearch2Gephi
             Console.WriteLine("y - collect youtube data from search terms in searchtermsn.txt and create edges.csv");
             Console.WriteLine("\ngeneral\n-------");
             Console.WriteLine("w - create weighted edges file (from edges.csv to edges-weighted.csv)");
+            Console.WriteLine("u - create edges-ucinet.csv from edges.csv in order to make it usable in ucinet");
             Console.WriteLine("c - clique-analysis from edges-weighted.csv (early stage PoC)");
+            Console.WriteLine("m - adjacency matrix test (early & slow stage PoC, obsolete when ucinet support is included");
             Console.Write("\nWhat should I do for you? ");
             choice = Console.ReadKey();
             Console.WriteLine("\n");
             userchoice += choice.KeyChar;
 
             if (choice.KeyChar == 'u')
+            {
+                Console.WriteLine("converting edges.csv to edges-ucinet.csv");
+
+                //File.WriteAllText(outdir + @"\edges-ucinet.csv", "Source,Target,Kind\n");
+
+                Dictionary<string, int> edges = new Dictionary<string, int>();
+
+                String[] lines = File.ReadAllLines(outfile);
+
+                Char dataset = 'w';
+                
+                for (int i = 1; i < lines.Length; i++)
+                {
+                    String[] values = lines[i].Split(',');
+
+                    writeLineUci(values[0], values[1], values[3], outdir + @"\edges-ucinet.csv");
+                }
+
+                Console.WriteLine("\n\nyou can now use edges-ucinet.csv to create a xlsx file which can then be imported in ucinet.");
+            }
+
+            // -------------------------------------------
+
+            if (choice.KeyChar == 'm')
             {
                 String[] nodes = { "", "MitBenutzername", "soistdatt", "p_manske", "PeterBorbe", "ThePraetorian21", "jan_mainka", "guenter0853", "politischerBeo1", "MeisnerWerner", "Itschi1", "HellerNorden", "mumaemar", "Kra07Man", "McGaybear", "RalfSchmitz2402", "Stephen12Miller", "WunderEmil", "SharleenM5", "Procyon25", "LudwigLarcher", "Inhaber1", "schamolf666", "schweizok2", "SapmiThe", "Jane_Banane_", "PPiwi55", "Mutbrger3", "MichaelRigol", "JensJahr", "Higgswielange", "sanvenganz_a", "orwell1984_a", "GNaktiv", "Panthersprung", "Zigeunerbaron3", "RuthBroucq", "LuckyLandShop", "Walthander", "Xena93795210", "OfficeRolando", "MaTiaWa1", "sifu_Qkung_fu", "OlivierKahn3", "Qnessi17", "pimmelbob", "sgasteyger", "lookintothesky3", "pjensen111", "tioneada", "mythologous", "schmidja2017", "MarcAnt0463", "oldipeterpan", "HPunkt_SPunkt", "wollea71", "SchwarzeHexe5", "Maxman23", "Schnapp98712747", "Stephan2301", "Petra507838451", "St_MichaelAngel", "nertha7", "Mirola11695965", "rheindelta20", "Lipitelektroph1", "MHHofmeister", "martinm90350202", "SnaH3210", "Q_Tweets", "MS87366367", "Starwalker999", "michacsendc", "Vaaltor", "Peter73832399", "LedbetterRalf", "PratoriusDr", "Northpoleshift", "strfry", "Muelle2s", "VolksArchitekt", "nimrod63", "marcusneuhaus", "RasantiVeloce", "Nebulous81", "TheTrueMPK", "Simon_Groh", "ZettJens", "von_kries", "TS_Quint", "Liraja5", "Imageberatungen", "Tschonka", "tlehr15", "suerprisli", "UlrHenn", "Jaybird_XXX", "uwe_1955", "JosephinaLopz1", "politisch_und_k" };
                 String[,] adjmatrix = new string[nodes.Length, nodes.Length];
@@ -709,7 +855,8 @@ namespace TwitterSearch2Gephi
                 creds = Auth.SetUserCredentials(credentials[0], credentials[1], credentials[2], credentials[3]);
 
                 File.WriteAllText(outfile, "Source,Target,Type,Kind,Id,Label,timeset,Weight\n");
-
+                File.WriteAllText(nodesoutfile, "Id,Label,timeset,twitter_type,lat,lng,place_country,place_type,place_fullname,place_name,created_at,lang,possibly_sensitive,quoted_status_permalink,description,email,profile_image,friends_count,followers_count,real_name,location,emoji_alias,emoji_html_decimal,emoji_utf8\n");
+                //File.WriteAllText(nodesoutfile, "Id,Label,friends_count,followers_count\n");
 
                 // MANUAL MAPPING OF ACCOUNTS, e.g. RTDeutsch and russiatoday, also for cross social-media mapping, ...
                 /*
@@ -751,17 +898,21 @@ namespace TwitterSearch2Gephi
 
                 String key = @"&key=" + File.ReadAllText(outdir + @"\youtube.txt");
                 JObject jsonres;
-                String strres;
+                String strres = "";
                 JArray items_video, items_comment, items_replies;
                 String publishedAfter = "&publishedAfter=2020-10-01T00%3A00%3A00Z";
                 String urlSearchList;
+                String userinfo = "";
+                Dictionary<string, string> ytusers = new Dictionary<string, string>();
 
                 File.WriteAllText(outfile, "Source,Target,Type,Kind,Id,Label,timeset,Weight\n");
-
+                File.WriteAllText(nodesoutfile, "Id,Label,Interval,Description,Url,Language,Country,ViewCount,SubscribersCount,HiddenSubscribersCount,VideoCount\n");
+                
                 // TODO: handle paginated results for keyword search (similar to the way it is already implemented for comments)
                 foreach (String querywords in searchterms)
                 {
                     String query = "&q=" + querywords;
+                    Console.WriteLine("searching for " + querywords);
                     urlSearchList = "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=100" + query + publishedAfter + key;
 
                     strres = mwc.DownloadString(urlSearchList);
@@ -784,7 +935,17 @@ namespace TwitterSearch2Gephi
                         DateTime timeset = DateTime.Now;
                         String title = "[VIDEO]" + ((String)tmp["snippet"]["title"]).Replace(',','_');
                         String channelTitle = ((String)tmp["snippet"]["channelTitle"]).Replace(',', '_');
-                        writeLine('w', timeset, channelTitle + " / " + tmp["snippet"]["channelId"], title + " / " + tmp["id"]["videoId"], "publishedVideo", outfile, 10);
+                        writeLine('w', timeset, "" + tmp["snippet"]["channelId"], title + " / " + tmp["id"]["videoId"], "publishedVideo", outfile, 10);
+
+                        //userinfo = getYoutubeUser((String)tmp["snippet"]["channelId"]);
+                        //File.AppendAllText(nodesoutfile, userinfo + "\n");
+                        //Console.WriteLine("USERINFO: " + userinfo);
+                        try
+                        {
+                            ytusers.Add((String)tmp["snippet"]["channelId"], (String)tmp["snippet"]["channelId"]);
+                        }
+                        catch (Exception e)
+                        { }
 
                         // get relations from comments on current video
                         while ((firstpage == true) | (nextPageToken != null))
@@ -819,7 +980,17 @@ namespace TwitterSearch2Gephi
                                     String authorChannelUrl = (String)item["snippet"]["topLevelComment"]["snippet"]["authorChannelUrl"];
                                     String authorChannelId = (String)item["snippet"]["topLevelComment"]["snippet"]["authorChannelId"]["value"];
                                     Console.WriteLine(authorDisplayName + " / " + textOriginal + " / " + authorChannelUrl + " / " + authorChannelId);
-                                    writeLine('w', timeset, authorDisplayName + " / " + authorChannelId, title + " / " + videoid, "commentedVideo", outfile, 5);
+                                    writeLine('w', timeset, "" + authorChannelId, title + " / " + videoid, "commentedVideo", outfile, 5);
+
+                                    //userinfo = getYoutubeUser((String)item["snippet"]["topLevelComment"]["snippet"]["authorChannelId"]["value"]);
+                                    //File.AppendAllText(nodesoutfile, userinfo + "\n");
+                                    //Console.WriteLine("USERINFO: " + userinfo);
+                                    try
+                                    {
+                                        ytusers.Add((String)item["snippet"]["topLevelComment"]["snippet"]["authorChannelId"]["value"], (String)item["snippet"]["topLevelComment"]["snippet"]["authorChannelId"]["value"]);
+                                    }
+                                    catch (Exception)
+                                    { }
 
                                     // TODO: handle replies to comments
                                     //Console.WriteLine(item["replies"]["comments"]);
@@ -840,7 +1011,17 @@ namespace TwitterSearch2Gephi
                                                 String replAuthorChannelUrl = (String)item_reply["snippet"]["authorChannelUrl"];
                                                 String replAuthorChannelId = (String)item_reply["snippet"]["authorChannelId"]["value"];
                                                 Console.WriteLine(replAuthorDisplayName + " / " + replTextOriginal + " / " + replAuthorChannelUrl + " / " + replAuthorChannelId);
-                                                writeLine('w', timeset, replAuthorDisplayName + " / " + replAuthorChannelId, authorDisplayName + " / " + authorChannelId, "repliedComment", outfile, 5);
+                                                writeLine('w', timeset, "" + replAuthorChannelId, "" + authorChannelId, "repliedComment", outfile, 5);
+
+                                                //userinfo = getYoutubeUser((String)item_reply["snippet"]["authorChannelId"]["value"]);
+                                                //File.AppendAllText(nodesoutfile, userinfo + "\n");
+                                                //Console.WriteLine("USERINFO: " + userinfo);
+                                                try
+                                                {
+                                                    ytusers.Add((String)item_reply["snippet"]["authorChannelId"]["value"], (String)item_reply["snippet"]["authorChannelId"]["value"]);
+                                                }
+                                                catch (Exception)
+                                                { }
                                             }
                                         }
                                         catch (Exception e)
@@ -864,6 +1045,15 @@ namespace TwitterSearch2Gephi
                             //Console.WriteLine("nextPageToken: " + nextPageToken);
                         }
                     }
+                }
+
+                // TODO: make this optional since it might cause problems with rate limits
+                // at the end of data collection for edges, create separate nodes.csv file with detailed node information
+                foreach (KeyValuePair<string, string> tmp in ytusers)
+                {
+                    userinfo = getYoutubeUser(tmp.Key);
+                    File.AppendAllText(nodesoutfile, userinfo + "\n");
+                    //Console.WriteLine("USERINFO: " + userinfo);
                 }
                 
             }
