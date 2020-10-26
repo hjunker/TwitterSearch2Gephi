@@ -10,18 +10,22 @@ More social media platforms and more features for the platforms already implemen
 Written by [@DisinfoG](https://twitter.com/DisinfoG)
 
 ## Installation
-Currently there is no binary package available for TwitterSearch2Gephi on GitHub. As Obi Wan would say: May the source be with you.
+Currently there is no binary package available for TwitterSearch2Gephi on GitHub. As Obi Wan would say: May the source be with you. Currently TwitterSearch2Gephi does not intend to be a product (and it probably won't in the near future) - it is more like a PoC or something to get you started. Depending on what you want to do with it, you have to code yourself or contact me. Basic knowledge in coding (not necessarily .NET) and should be sufficient.
 
-TwitterSearch2Gephi requires the folder C:\TwitterSearch2Gephi where it can read and write files.
+TwitterSearch2Gephi requires the folder C:\TwitterSearch2Gephi as its working directory where it can read and write files. In case you want to use TwitterSearch2Gephi with Mono, you have to adjust this (hard coded) directory. This should be enough to get you up and running with Mono since TwitterSearch2Gephi is a .NET-Core application (not a full .NET application).
+
 ![x](img/githubimg01.png)
 
 The credentials for accessing the twitter REST API have to be placed in credentials.txt with one entry in each line for consumerKey, consumerSecret, userAccessToken, userAccessSecret in this order.
 
 The credentials for accessing the Reddit API have to be placed in redditcredentials.txt. The file needs to contain the 3 credential parameters for your reddit account / app one per line in the order appId, refreshToken, accessToken. These tokens have to be generated with a third party component such as Reddit.NET. If you get an 401 error you need to renew your credentials - these tokens become obsolete within a narrow time window of non-usage.
 
+The credential (API-Key! *not* OAuth2.0) for accessing the Youtube API have to be placed in youtube.txt. Refer to https://console.developers.google.com/apis/dashboard in order to get an API key.
+
 ## Usage
-### Twitter
-TwitterSearch2Gephi takes the accounts (ScreenName) to look for from accounts.txt (one ScreenName per line without @). For each account it collects the following for generating engagements data.
+![x](img/githubimg00.png)
+### Twitter (options a and s)
+TwitterSearch2Gephi takes the accounts (ScreenName) to look for from accounts.txt (one ScreenName per line without @). For each account it collects the following for generating engagements data. Alternatively you can collect data using the search terms in searchterms.txt.
 *	Followers (default max. 250)
 *	Friends (default max. 250)
 *	Favorites (default max. 40)
@@ -46,14 +50,19 @@ If everything works right you should see the data in the data lab view.
 You can now visualize the data using the layouts you have installed in Gephi.
 ![x](img/githubimg08.png)
 
-### Reddit
+### Reddit (option r)
 documentation coming soon
 
-### Youtube
+### Youtube (option y)
 documentation coming soon
 
-### WWW
+### WWW (option d)
 documentation coming soon
+
+### general (options w, u and c)
+documentation coming soon
+
+Option 'u' converts edges.csv to edges-ucinet.csv in order to make it usable in UCINET. edges-ucinet.csv has to be converted to a xslx file (e.g. with LibreOffice). The xslx file can then be imported with UCINET's DL editor (type edges23). You can then save the imported data as ##d and ##h files. Work on these files with UCINET.
 
 ## TODOs
 Some things are not implemented yet.
